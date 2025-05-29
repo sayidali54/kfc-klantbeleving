@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KFC Klantbeleving</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+      overflow-x: hidden;
+      background-color: #dc2626;
+      color: white;
+    }
+
+    body::before {
+      content: 'KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC KFC';
+      font-size: 4rem;
+      font-family: sans-serif;
+      font-weight: bold;
+      color: white;
+      opacity: 0.05;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transform: rotate(-10deg);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 2rem;
+      background: rgba(255,255,255,0.95);
+      border-radius: 1rem;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      margin-top: 2rem;
+      color: #1f2937;
+    }
+
+    h1, h2 {
+      color: #dc2626;
+      display: block;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #fca5a5;
+      border-radius: 0.5rem;
+    }
+
+    button {
+      background-color: #dc2626;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .stars span {
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .yellow { color: #facc15; }
+    .gray { color: #d1d5db; }
+
+    .feedback-entry {
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    canvas {
+      background-color: #fff0f1;
+      border-radius: 0.5rem;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🍗 Uw mening over KFC telt!</h1>
+
+    <label>Bij welke KFC was u?</label>
+    <input type="text" id="location" placeholder="Bijv. Waalwijk" />
+
+    <label>Vertel ons over uw ervaring</label>
+    <textarea id="feedback" placeholder="Wat vond u van uw bezoek?"></textarea>
+
+    <label>Beoordeling</label>
+    <div class="stars" id="star-container"></div>
+    <div id="smiley" style="font-size: 2rem; margin-bottom: 1rem;"></div>
+
+    <button onclick="submitFeedback()">Verstuur</button>
+
+    <h2>🗂️ Recente Reviews</h2>
+    <div id="feedback-list"></div>
+
+    <canvas id="reviewChart" width="400" height="150"></canvas>
+  </div>
+
+  <script>
+    let selectedRating = 0;
+    let reviewCounts = [0, 0, 0, 0, 0];
+
+    function renderStars() {
+      const container = document.getElementById("star-container");
+      container.innerHTML = "";
+      for (let i = 1; i <= 5; i++) {
+        const star = document.createElement("span");
+        star.innerHTML = "★";
+        star.className = i <= selectedRating ? "yellow" : "gray";
+        star.onclick = () => {
+          selectedRating = i;
+          renderStars();
+          renderSmiley();
+        };
+        container.appendChild(star);
+      }
+    }
+
+    function renderSmiley() {
+      const el = document.getElementById("smiley");
+      if (selectedRating >= 4) el.innerHTML = "😊";
+      else if (selectedRating > 0 && selectedRating <= 2) el.innerHTML = "😞";
+      else el.innerHTML = "";
+    }
+
+    function updateChart() {
+      reviewChart.data.datasets[0].data = reviewCounts;
+      reviewChart.update();
+    }
+
+    function submitFeedback() {
+      const location = document.getElementById("location").value;
+      const feedback = document.getElementById("feedback").value;
+      if (!location || !feedback || selectedRating === 0) {
+        alert("Vul alle velden in en kies een beoordeling.");
+        return;
+      }
+
+      reviewCounts[selectedRating - 1]++;
+      updateChart();
+
+      const entry = document.createElement("div");
+      entry.className = "feedback-entry";
+      entry.innerHTML = `
+        <strong>📍 ${location}</strong><br/>
+        📝 ${feedback}<br/>
+        ⭐ ${"★".repeat(selectedRating)}${"★".repeat(5 - selectedRating)}<br/>
+        ${selectedRating >= 4 ? "😊" : selectedRating <= 2 ? "😞" : ""}
+      `;
+      document.getElementById("feedback-list").prepend(entry);
+
+      document.getElementById("location").value = "";
+      document.getElementById("feedback").value = "";
+      selectedRating = 0;
+      renderStars();
+      renderSmiley();
+    }
+
+    renderStars();
+
+    const ctx = document.getElementById('reviewChart').getContext('2d');
+    const reviewChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['⭐1', '⭐2', '⭐3', '⭐4', '⭐5'],
+        datasets: [{
+          label: 'Aantal reviews per score',
+          data: reviewCounts,
+          backgroundColor: '#dc2626'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
